@@ -21,17 +21,17 @@ jobs:
           ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IPS }} >> ~/.ssh/known_hosts
 
       - name: Deploy and substitute hostname on each server
-            run: |
-              for ip in ${{ secrets.EC2_PUBLIC_IPS }}; do
-                echo ">>> Deploying to instance $ip..."
+        run: |
+          for ip in ${{ secrets.EC2_PUBLIC_IPS }}; do
+            echo ">>> Deploying to instance $ip..."
                 
-                scp -i ~/.ssh/id_rsa index.html ubuntu@$ip:/home/ubuntu/
+            scp -i ~/.ssh/id_rsa index.html ubuntu@$ip:/home/ubuntu/
                 
-                ssh -i ~/.ssh/id_rsa ubuntu@$ip "
-                  SERVER_HOSTNAME=$(hostname) && \
-                  sed \"s/__HOSTNAME__/$SERVER_HOSTNAME/g\" /home/ubuntu/index.html > /home/ubuntu/index.processed.html && \
-                  sudo mv /home/ubuntu/index.processed.html /var/www/html/index.html
-                "
+            ssh -i ~/.ssh/id_rsa ubuntu@$ip "
+              SERVER_HOSTNAME=$(hostname) && \
+              sed \"s/__HOSTNAME__/$SERVER_HOSTNAME/g\" /home/ubuntu/index.html > /home/ubuntu/index.processed.html && \
+              sudo mv /home/ubuntu/index.processed.html /var/www/html/index.html
+            "
                 
-                echo ">>> Deployment to $ip successful!"
-              done
+            echo ">>> Deployment to $ip successful!"
+          done
