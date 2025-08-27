@@ -8,7 +8,6 @@ jobs:
   deploy:
     name: Deploy to EC2 Instances
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,27 +19,13 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IPS }} >> ~/.ssh/known_hosts
 
-      - name: Deploy and substitute hostname on each server
+      - name: Deploy to each server
         run: |
-              for ip in ${{ secrets.EC2_PUBLIC_IPS }}; do
-                echo ">>> Deploying to instance $ip..."
-                
-                # Schritt 1: Datei kopieren (bleibt gleich)
-                scp -i ~/.ssh/id_rsa index.html ubuntu@$ip:/home/ubuntu/
-                
-                # Schritt 2: Robusteres SSH-Skript ausführen
-                # Die einfachen Anführungszeichen '...' sorgen dafür, dass alles
-                # erst auf dem Zielserver ausgeführt wird.
-                ssh -i ~/.ssh/id_rsa ubuntu@$ip '
-                  # Diese Zeilen helfen bei der Fehlersuche
-                  set -e  # Bricht bei einem Fehler sofort ab
-                  set -x  # Zeigt jeden Befehl im Log an
-
-                  # Führe die Befehle genau wie vorher aus
-                  SERVER_HOSTNAME=$(hostname)
-                  sed "s/__HOSTNAME__/$SERVER_HOSTNAME/g" /home/ubuntu/index.html > /home/ubuntu/index.processed.html
-                  sudo mv /home/ubuntu/index.processed.html /var/www/html/index.html
-                '
-                
-                echo ">>> Deployment to $ip successful!"
-              done
+          for ip in ${{ secrets.EC2_PUBLIC_IPS }}; do
+            scp -i ~/.ssh/id_rsa index.html ubuntu@$ip:/home/ubuntu/
+            ssh -i ~/.ssh/id_rsa ubuntu@$ip '
+              SERVER_HOSTNAME=$(hostname)
+              sed "s/__HOSTNAME__/$SERVER_HOSTNAME/g" /home/ubuntu/index.html > /home/ubuntu/index.processed.html
+              sudo mv /home/ubuntu/index.processed.html /var/www/html/index.html
+            '
+          done
